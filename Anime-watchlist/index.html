@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Anime List</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(45deg, #4b0082, #ff00ff, #20b2aa, #ee82ee);
+      background-size: 400%;
+      animation: liquidBackground 15s ease infinite;
+    }
+    @keyframes liquidBackground {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .nav-menu {
+      max-width: 600px;
+      margin: 0 auto 20px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+    .nav-link {
+      color: #fff;
+      text-decoration: none;
+      font-size: 18px;
+      padding: 8px 16px;
+      border-radius: 5px;
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+    .nav-link:hover {
+      background: #000000;
+    }
+    .nav-link.active {
+      background: rgba(0, 123, 255, 0.5);
+    }
+    h1 {
+      text-align: center;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .anime-list {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 0;
+      list-style: none;
+    }
+    .anime-item {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      opacity: 0;
+      animation: fadeIn 0.5s ease forwards;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    .anime-item.selected-home {
+      background: rgba(138, 43, 226, 0.3);
+      border: 5px solid #8a2be2;
+      box-shadow: 0 0 25px rgba(138, 43, 226, 0.9);
+      animation: pulse 2.5s ease;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.07); }
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 12px;
+      border-radius: 5px;
+      color: #fff;
+      margin-top: 3px;
+    }
+    .badge.finished { background: #28a745; }
+    .badge.watching { background: #ffc107; color: #000; }
+    .badge.plan { background: #007bff; }
+    .remove-btn {
+      background: #ff4d4d;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .remove-btn:hover {
+      background: #e60000;
+    }
+    .add-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 15px;
+      font-size: 16px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .add-btn:hover {
+      background: #0056b3;
+    }
+    .search-container {
+      max-width: 600px;
+      margin: 20px auto;
+      display: flex;
+      gap: 10px;
+    }
+    .search-container input {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .search-results {
+      max-width: 600px;
+      margin: 10px auto;
+      padding: 0;
+      list-style: none;
+    }
+    .search-result {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .search-result:hover {
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transform: scale(1.02);
+    }
+    .search-result img {
+      width: 50px;
+      height: auto;
+      border-radius: 5px;
+    }
+    .search-result button {
+      background: #28a745;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .search-result button:hover {
+      background: #218838;
+    }
+    .loading, .error { text-align: center; }
+    .loading { color: #fff; }
+    .error { color: #ff4d4d; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <nav class="nav-menu">
+    <span class="nav-link active" data-page="home">Home</span>
+    <span class="nav-link" data-page="search">Search</span>
+  </nav>
+  <div id="homePage">
+    <h1>My Anime Watchlist</h1>
+    <ul class="anime-list" id="animeList"></ul>
+  </div>
+  <div id="searchPage" class="hidden">
+    <h1>Search Anime</h1>
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Search for anime (e.g., Naruto)">
+      <button class="add-btn" id="addAnimeButton">Search</button>
+    </div>
+    <div id="loading" class="loading" style="display: none;">Loading...</div>
+    <div id="error" class="error" style="display: none;"></div>
+    <ul class="search-results" id="searchResults"></ul>
+  </div>
+
+  <script>
+    // Navigation
+    const navLinks = document.querySelectorAll('.nav-link');
+    const homePage = document.getElementById('homePage');
+    const searchPage = document.getElementById('searchPage');
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        homePage.classList.toggle('hidden', link.dataset.page !== 'home');
+        searchPage.classList.toggle('hidden', link.dataset.page !== 'search');
+        if (link.dataset.page === 'home') renderWatchlist();
+      });
+    });
+
+    // Watchlist logic
+    let watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
+
+    function renderWatchlist(highlightId = null) {
+      const animeList = document.getElementById('animeList');
+      animeList.innerHTML = '';
+      watchlist.forEach(anime => {
+        const li = document.createElement('li');
+        li.className = 'anime-item';
+        if (anime.id === highlightId) li.classList.add('selected-home');
+        
+        // status badge color
+        let statusClass = 'plan';
+        if (anime.status.toLowerCase().includes("finished")) statusClass = 'finished';
+        else if (anime.status.toLowerCase().includes("still")) statusClass = 'watching';
+
+        li.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;" class="anime-info">
+            <img src="${anime.image}" alt="${anime.title}" style="width: 50px; border-radius: 5px;">
+            <div>
+              <strong>${anime.title}</strong>
+              <small>Genre: ${anime.genre}</small>
+              <span class="badge ${statusClass}">${anime.status}</span>
+            </div>
+          </div>
+          <button class="remove-btn">Remove</button>
+        `;
+        li.querySelector('.remove-btn').addEventListener('click', () => {
+          watchlist = watchlist.filter(item => item.id !== anime.id);
+          localStorage.setItem('watchlist', JSON.stringify(watchlist));
+          renderWatchlist();
+          Swal.fire("Removed!", `${anime.title} was removed from your watchlist.`, "info");
+        });
+        animeList.appendChild(li);
+      });
+    }
+
+    // Search logic
+    function initSearch() {
+      const searchInput = document.getElementById('searchInput');
+      const addAnimeButton = document.getElementById('addAnimeButton');
+      const searchResults = document.getElementById('searchResults');
+      const loading = document.getElementById('loading');
+      const error = document.getElementById('error');
+
+      let searchTimeout;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          const query = searchInput.value.trim();
+          if (query) searchAnime(query);
+        }, 500);
+      });
+
+      addAnimeButton.addEventListener('click', () => {
+        const query = searchInput.value.trim();
+        if (query) searchAnime(query);
+      });
+
+      async function searchAnime(query) {
+        loading.style.display = 'block';
+        error.style.display = 'none';
+        searchResults.innerHTML = '';
+
+        try {
+          const response = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=10`);
+          if (!response.ok) throw new Error('Network error or rate limit hit');
+          const { data } = await response.json();
+
+          if (data.length === 0) {
+            error.style.display = 'block';
+            error.textContent = 'No results found';
+            return;
+          }
+
+          data.forEach(anime => {
+            const li = document.createElement('li');
+            li.className = 'search-result';
+            li.innerHTML = `
+              <img src="${anime.images.jpg.image_url || 'https://via.placeholder.com/50'}" alt="${anime.title}">
+              <div>
+                <strong>${anime.title}</strong>
+                <p>${anime.synopsis ? anime.synopsis.slice(0, 100) + '...' : 'No synopsis available'}</p>
+              </div>
+              <button>Select</button>
+            `;
+            li.querySelector('button').addEventListener('click', () => {
+              addAnimeToWatchlist(anime);
+            });
+            searchResults.appendChild(li);
+          });
+        } catch (err) {
+          error.style.display = 'block';
+          error.textContent = 'Error fetching anime: ' + err.message;
+        } finally {
+          loading.style.display = 'none';
+        }
+      }
+
+      function addAnimeToWatchlist(anime) {
+        // prevent duplicates
+        if (watchlist.some(item => item.id === anime.mal_id)) {
+          Swal.fire("Already Added", `${anime.title} is already in your watchlist.`, "warning");
+          return;
+        }
+
+        let genre = prompt('Enter the anime genre:', anime.genres?.map(g => g.name).join(', ') || '');
+        if (!genre && genre !== null) genre = anime.genres?.map(g => g.name).join(', ') || 'Unknown';
+
+        let status = prompt('Enter your status (Still Watching / Plan to Watch / Finished):', 'Plan to Watch');
+        if (!status && status !== null) status = 'Plan to Watch';
+
+        if (genre === null || status === null) return;
+
+        const animeData = {
+          id: anime.mal_id,
+          title: anime.title,
+          genre,
+          status,
+          image: anime.images.jpg.image_url || 'https://via.placeholder.com/50'
+        };
+
+        watchlist.push(animeData);
+        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+        searchResults.innerHTML = '';
+        searchInput.value = '';
+        
+        Swal.fire("Added!", `${anime.title} has been added to your watchlist!`, "success");
+        
+        navLinks.forEach(l => l.classList.remove('active'));
+        document.querySelector('[data-page="home"]').classList.add('active');
+        homePage.classList.remove('hidden');
+        searchPage.classList.add('hidden');
+        renderWatchlist(animeData.id);
+      }
+    }
+
+    // Initialize
+    renderWatchlist();
+    initSearch();
+  </script>
+</body>
+</html>
